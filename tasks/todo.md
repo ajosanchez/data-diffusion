@@ -46,7 +46,7 @@ Ordered by dependency. Full rationale in `tasks/plan.md`; spec in `SPEC.md`.
   - Files: `src/data_diffusion/model.py`, `src/data_diffusion/__init__.py`,
     `tests/test_model.py`.
 
-- [ ] Task 6: Integration fidelity + package check
+- [x] Task 6: Integration fidelity + package check
   - Acceptance: on ~1k-row mixed fixture, per-column marginals match:
     KS < 0.15 (numeric), TV < 0.15 (categorical); `uv build` wheel installs
     into a fresh venv with only the four runtime deps.
