@@ -36,7 +36,7 @@ Ordered by dependency. Full rationale in `tasks/plan.md`; spec in `SPEC.md`.
   - Verify: equality test `n_jobs=1` vs `n_jobs=4`; small timing sanity check.
   - Files: `src/data_diffusion/forestflow.py`, `tests/test_forestflow.py`.
 
-- [ ] Task 5: TabularDiffusion API
+- [x] Task 5: TabularDiffusion API
   - Acceptance: `fit(df)` stores encoder + model; `sample(n, seed)` returns
     DataFrame with identical columns/dtypes; categorical values ⊆ training
     domains (plus "Other"); integers/counts rounded and clipped; datetimes

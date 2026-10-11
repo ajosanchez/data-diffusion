@@ -99,10 +99,14 @@ def test_fit_rejects_non_2d_input() -> None:
         fit_forest_flow(np.zeros(10))
 
 
-def test_fit_rejects_nan() -> None:
-    x = np.array([[1.0, 2.0], [np.nan, 3.0]])
-    with pytest.raises(ValueError, match="NaN|finite"):
-        fit_forest_flow(x, n_t=2, K=2)
+def test_fit_allows_nan_but_rejects_inf() -> None:
+    x_nan = np.array([[1.0, 2.0], [np.nan, 3.0]])
+    bundle = fit_forest_flow(x_nan, n_t=2, K=2, xgb_kwargs={"n_estimators": 5})
+    out = sample_forest_flow(bundle, 10, seed=0)
+    assert np.isfinite(out).all()
+    x_inf = np.array([[1.0, 2.0], [np.inf, 3.0]])
+    with pytest.raises(ValueError, match="infinite"):
+        fit_forest_flow(x_inf, n_t=2, K=2)
 
 
 def test_fit_rejects_empty_input() -> None:

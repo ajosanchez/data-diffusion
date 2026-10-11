@@ -203,9 +203,9 @@ class TabularEncoder:
             return np.array(
                 [spec.levels[i] if i >= 0 else None for i in idx], dtype="object"
             )
-        unscaled = self._unscale(block[:, 0], spec)
         if spec.kind == "boolean":
-            return unscaled > 0.5
+            return block[:, 0] > 0.5  # boolean is encoded as raw 0/1, no rescale
+        unscaled = self._unscale(block[:, 0], spec)
         if spec.kind == "integer":
             return np.clip(np.rint(unscaled), spec.vmin, spec.vmax).astype("int64")
         if spec.kind == "datetime":
