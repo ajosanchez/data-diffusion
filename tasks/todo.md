@@ -28,7 +28,7 @@ Ordered by dependency. Full rationale in `tasks/plan.md`; spec in `SPEC.md`.
   - Verify: `uv run pytest tests/test_forestflow.py` green (red→green).
   - Files: `src/data_diffusion/forestflow.py`, `tests/test_forestflow.py`.
 
-- [ ] Task 4: Parallel training via joblib
+- [x] Task 4: Parallel training via joblib
   - Acceptance: model fits distributed over (level, column) with
     `joblib.Parallel(backend="loky")`; `n_jobs` parameter; XGBoost internal
     `n_jobs=1` inside workers; output bundle identical (same predictions) for

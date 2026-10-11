@@ -29,6 +29,7 @@ class _ColumnSpec:
     vmin: float = 0.0
     vmax: float = 0.0
     levels: list[str] = field(default_factory=list)
+    out_dtype: str = ""  # exact source dtype for datetime round-tripping
 
 
 class TabularEncoder:
@@ -131,7 +132,13 @@ class TabularEncoder:
             days = self._to_days(series)
             if days.notna().sum() == 0:
                 raise ValueError(f"column {name!r} is all-NaN/NaT")
-            return _ColumnSpec(name, "datetime", float(days.min()), float(days.max()))
+            return _ColumnSpec(
+                name,
+                "datetime",
+                float(days.min()),
+                float(days.max()),
+                out_dtype=str(dtype),
+            )
         if pd.api.types.is_integer_dtype(dtype):
             return _ColumnSpec(
                 name, "integer", float(series.min()), float(series.max())
@@ -203,7 +210,10 @@ class TabularEncoder:
             return np.clip(np.rint(unscaled), spec.vmin, spec.vmax).astype("int64")
         if spec.kind == "datetime":
             days = pd.Series(np.rint(unscaled))
-            return (_EPOCH + pd.to_timedelta(days, unit="D")).to_numpy()
+            dt = _EPOCH + pd.to_timedelta(days, unit="D")
+            if spec.out_dtype and spec.out_dtype != str(dt.dtype):
+                dt = dt.astype(spec.out_dtype)
+            return dt.to_numpy()
         return unscaled  # float
 
     def _scale(self, series: pd.Series, spec: _ColumnSpec) -> np.ndarray:
