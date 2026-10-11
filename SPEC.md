@@ -64,6 +64,10 @@ tests/
   test_encoder.py    # round-trip, type inference, rare merging, edge cases
   test_forestflow.py # velocity targets, Euler sampling shapes, noise→data path
   test_model.py      # end-to-end fit/sample on small mixed-type DataFrames
+notebooks/
+  iris-demo.ipynb    # executed demo: Iris clusters, original vs. synthetic;
+                     # source of the README images in docs/
+docs/                # figures exported from the demo notebook, embedded in README
 SPEC.md              # this file
 pyproject.toml
 ```

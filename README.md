@@ -46,6 +46,20 @@ clipped integers, float → continuous, datetime → dates, string/categorical
 are supported in training data; sampled rows are complete (missingness is
 not modeled).
 
+## Demo: Iris, 150 rows → 3,000 synthetic rows
+
+Trained on the classic Iris dataset and sampled 20× as many rows
+([notebook](notebooks/iris-demo.ipynb)) — the three-species cluster
+structure carries over:
+
+![Iris original vs. synthetic clusters](docs/iris-comparison.png)
+
+- **Setosa** stays fully separable; the **versicolor/virginica** overlap
+  region is reproduced, including its shape and tilt.
+- Per-feature moments match: means within 0.04, standard deviations within
+  0.06, species mix 31.7 / 36.5 / 31.8 vs. 33.3 / 33.3 / 33.3.
+- Within-cluster means match within 0.07 on every feature.
+
 ## Parameters
 
 | Parameter | Default | Meaning |
