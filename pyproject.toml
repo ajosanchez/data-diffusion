@@ -19,6 +19,7 @@ packages = ["src/data_diffusion"]
 
 [dependency-groups]
 dev = [
+    "ipykernel>=7.4.0",
     "matplotlib>=3.11.2",
     "pytest>=9.1.1",
     "ruff>=0.17.0",
