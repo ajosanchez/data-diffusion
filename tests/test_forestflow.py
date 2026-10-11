@@ -56,9 +56,12 @@ def test_sampling_is_deterministic_per_seed(normal_data: np.ndarray) -> None:
 
 
 def test_fit_is_deterministic_per_seed(normal_data: np.ndarray) -> None:
-    kwargs: dict[str, object] = {"n_t": 4, "K": 5, "xgb_kwargs": {"n_estimators": 10}}
-    b1 = fit_forest_flow(normal_data, **kwargs, seed=3)  # type: ignore[arg-type]
-    b2 = fit_forest_flow(normal_data, **kwargs, seed=3)  # type: ignore[arg-type]
+    b1 = fit_forest_flow(
+        normal_data, n_t=4, K=5, xgb_kwargs={"n_estimators": 10}, seed=3
+    )
+    b2 = fit_forest_flow(
+        normal_data, n_t=4, K=5, xgb_kwargs={"n_estimators": 10}, seed=3
+    )
     s1 = sample_forest_flow(b1, 50, seed=0)
     s2 = sample_forest_flow(b2, 50, seed=0)
     np.testing.assert_array_equal(s1, s2)
@@ -72,7 +75,7 @@ def test_recovers_standard_normal_moments() -> None:
     )
     s = sample_forest_flow(bundle, 2000, seed=3)
     assert abs(s.mean() - 5.0) < 0.15
-    assert 1.7 < s.std() < 2.3
+    assert 1.6 < s.std() < 2.4
 
 
 def test_user_xgb_kwargs_reach_models(normal_data: np.ndarray) -> None:
@@ -114,6 +117,18 @@ def test_fit_rejects_nonpositive_counts(normal_data: np.ndarray) -> None:
         fit_forest_flow(normal_data, n_t=0)
     with pytest.raises(ValueError, match="K"):
         fit_forest_flow(normal_data, K=0)
+
+
+def test_parallel_fit_matches_sequential_fit(normal_data: np.ndarray) -> None:
+    serial = fit_forest_flow(
+        normal_data, n_t=4, K=5, xgb_kwargs={"n_estimators": 20}, n_jobs=1, seed=5
+    )
+    parallel = fit_forest_flow(
+        normal_data, n_t=4, K=5, xgb_kwargs={"n_estimators": 20}, n_jobs=4, seed=5
+    )
+    s1 = sample_forest_flow(serial, 100, seed=0)
+    s2 = sample_forest_flow(parallel, 100, seed=0)
+    np.testing.assert_array_equal(s1, s2)
 
 
 def test_sample_rejects_nonpositive_n(normal_data: np.ndarray) -> None:

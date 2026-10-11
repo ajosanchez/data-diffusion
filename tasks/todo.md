@@ -20,7 +20,7 @@ Ordered by dependency. Full rationale in `tasks/plan.md`; spec in `SPEC.md`.
   - Verify: `uv run pytest tests/test_encoder.py` green after failing first (red→green).
   - Files: `src/data_diffusion/encoder.py`, `tests/test_encoder.py`.
 
-- [ ] Task 3: ForestFlow core (sequential)
+- [x] Task 3: ForestFlow core (sequential)
   - Acceptance: `fit_forest_flow` builds path points `x_t = (1-t)·z + t·x` and
     velocity targets `v* = x - z` correctly; `sample_forest_flow` returns
     shape (n, p) and moves noise toward data (training-marginal distance

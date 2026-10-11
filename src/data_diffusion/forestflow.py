@@ -14,8 +14,11 @@ from typing import Any
 
 import numpy as np
 import xgboost as xgb
+from joblib import Parallel, delayed
 
 type ForestFlowModel = dict[str, Any]
+
+type _ModelKey = tuple[float, int]
 
 _DEFAULT_XGB: dict[str, Any] = {
     "objective": "reg:squarederror",
@@ -25,10 +28,38 @@ _DEFAULT_XGB: dict[str, Any] = {
 }
 
 
+def _fit_one(
+    x_col: np.ndarray,
+    t_index: int,
+    t: float,
+    j: int,
+    K: int,
+    n_estimators: int,
+    params: dict[str, Any],
+    seed: int,
+) -> tuple[_ModelKey, xgb.Booster]:
+    """Fit one (t, column) velocity booster; pure function of its arguments.
+
+    Noise is regenerated here from a deterministic child seed of (seed,
+    t_index, j) so that serial and joblib paths produce identical models and
+    only a single column of data needs to cross process boundaries.
+    """
+    rng = np.random.default_rng([seed, t_index, j])
+    n_rows = len(x_col)
+    z = rng.normal(size=(n_rows * K, 1))
+    row_idx = rng.integers(0, n_rows, size=n_rows * K)
+    x_ref = x_col[row_idx][:, None]
+    x_t = (1.0 - t) * z + t * x_ref
+    v = x_ref - z
+    dtrain = xgb.DMatrix(x_t, label=v)
+    return (t, j), xgb.train(dict(params), dtrain, num_boost_round=n_estimators)
+
+
 def fit_forest_flow(
     x: np.ndarray,
     n_t: int = 50,
     K: int = 100,
+    n_jobs: int = 1,
     xgb_kwargs: dict[str, Any] | None = None,
     seed: int = 0,
 ) -> ForestFlowModel:
@@ -38,6 +69,10 @@ def fit_forest_flow(
         x: Encoded numeric matrix of shape (n_rows, n_features); no NaN.
         n_t: Number of t levels on the flow grid in [0, 1).
         K: Duplication factor; each row is paired with K noise draws.
+        n_jobs: joblib workers for the per-(t, column) fits; 1 is serial.
+            Results are identical for any n_jobs at a fixed seed. XGBoost
+            itself defaults to n_jobs=1 to avoid oversubscription inside
+            workers.
         xgb_kwargs: Overrides merged onto the default XGBoost parameters
             (`n_estimators` is accepted here and mapped to `num_boost_round`).
         seed: Seed for noise draws and row resampling.
@@ -60,22 +95,21 @@ def fit_forest_flow(
         raise ValueError(f"K must be >= 1, got {K}")
 
     kwargs = dict(xgb_kwargs or {})
-    n_estimators = kwargs.pop("n_estimators", 100)
+    n_estimators = int(kwargs.pop("n_estimators", 100))
     params = {**_DEFAULT_XGB, **kwargs}
-    rng = np.random.default_rng(seed)
     ts = [i / n_t for i in range(n_t)]
-    models: dict[tuple[float, int], xgb.Booster] = {}
-    for t in ts:
-        z = rng.normal(size=(n_rows * K, n_features))
-        row_idx = rng.integers(0, n_rows, size=n_rows * K)
-        x_ref = x[row_idx]
-        x_t = (1.0 - t) * z + t * x_ref
-        v = x_ref - z
-        for j in range(n_features):
-            dtrain = xgb.DMatrix(x_t[:, [j]], label=v[:, j])
-            models[(t, j)] = xgb.train(
-                params, dtrain, num_boost_round=int(n_estimators)
-            )
+    tasks = [(t_index, t, j) for t_index, t in enumerate(ts) for j in range(n_features)]
+    if n_jobs == 1:
+        fitted = [
+            _fit_one(x[:, j], t_index, t, j, K, n_estimators, params, seed)
+            for t_index, t, j in tasks
+        ]
+    else:
+        fitted = Parallel(n_jobs=n_jobs, backend="loky")(
+            delayed(_fit_one)(x[:, j], t_index, t, j, K, n_estimators, params, seed)
+            for t_index, t, j in tasks
+        )
+    models: dict[_ModelKey, xgb.Booster] = dict(fitted)
     return {"models": models, "ts": ts, "n_features": n_features}
 
 
