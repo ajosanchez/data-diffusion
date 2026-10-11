@@ -54,13 +54,13 @@ Ordered by dependency. Full rationale in `tasks/plan.md`; spec in `SPEC.md`.
   - Files: `tests/test_integration.py`, `tests/conftest.py` (fixture),
     possibly `pyproject.toml`.
 
-- [ ] Task 7: README and final checks
+- [x] Task 7: README and final checks
   - Acceptance: README shows install + two-call usage and carries a
     "not anonymized / not PII-scrubbed" disclaimer; all AGENTS.md checks pass.
   - Verify: `uv run ty check && uv run ruff format . && uv run ruff check . && uv run pytest`.
   - Files: `README.md`.
 
-- [ ] Task 8: Spec/plan housekeeping
+- [x] Task 8: Spec/plan housekeeping
   - Acceptance: checkboxes updated as tasks complete; spec updated if any
     decision changed during implementation.
   - Verify: review of `SPEC.md` / `tasks/` diff.

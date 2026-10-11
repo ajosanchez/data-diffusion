@@ -129,7 +129,7 @@ def fit_forest_flow(
 
 1. `uv build` produces a wheel/sdist that installs cleanly into a fresh
    virtualenv (`uv pip install dist/*.whl` in a temp env), with only
-   numpy/pandas/xgboost/joblib as runtime deps, requires-python >= 3.10,
+   numpy/pandas/xgboost/joblib as runtime deps, requires-python >= 3.12,
    and MIT license metadata.
 2. Encoder round-trip is exact on the test fixture, including datetimes and
    NaN patterns.
@@ -149,3 +149,41 @@ def fit_forest_flow(
    the project venv).
 3. Parallelism: joblib (loky backend) parallelizes the p × n_t model fits;
    `n_jobs` exposed as an `TabularDiffusion` parameter.
+
+## Implementation Addendum (deviations discovered during TDD)
+
+1. **Native xgboost API, not `XGBRegressor`.** XGBoost 3.x's sklearn
+   wrapper requires scikit-learn at import time (not an approved
+   dependency). Boosters are trained with `xgboost.train`; user
+   `xgb_kwargs["n_estimators"]` maps to `num_boost_round`.
+2. **x0-prediction, not velocity regression.** Regressing `v = x − z`
+   stalls on binary/discrete columns: `z` is unobservable given `x_t`, so
+   the label's conditional variance never shrinks and trees cannot learn
+   the sharp split a Bernoulli needs (observed 79/21 skew on a 50/50 flag).
+   Each booster instead predicts the clean value `x` from the noisy state;
+   sampling integrates with the equivalent DDIM Euler update
+   `x_{t+Δ} = (1−t−Δ)·x̂₀ + (t+Δ)·x̂`, `x̂₀ = (x_t − t·x̂)/(1−t)`.
+3. **Full-state model input.** Univariate (single-column) inputs let
+   independent one-hot dims all fire; decoding via argmax then resolved
+   conflicts toward the majority level (73% vs 46% true). Every model takes
+   the complete noisy state vector as input, so the one-hot dims' negative
+   correlation keeps blocks mutually exclusive.
+4. **Parallelism granularity: per t level.** One joblib task fits all p
+   boosters of one level; each worker holds one (n·K × p) matrix — the
+   memory budget in the original risk analysis — instead of one matrix per
+   (level, column) task. Noise is regenerated per level from the child seed
+   `[seed, t_index]`, so results are byte-identical for any `n_jobs`.
+5. **NaN allowed at fit.** `fit_forest_flow` accepts NaN (masked out
+   per column — their velocity labels are NaN anyway) and rejects inf only;
+   sampling never produces NaN because it starts from Gaussian noise.
+6. **Datetime unit preservation.** The encoder records the source column's
+   exact `datetime64[...]` dtype and decodes back to it (pandas 3 defaults
+   to `[us]`, not `[ns]`).
+7. **Rare-level merge uses two thresholds.** A level is rare if its count
+   < `rare_min_count` (20) OR its share < `rare_min_fraction` (0.01); both
+   are exposed on `TabularDiffusion` (the planned single
+   `rare_level_threshold` knob was dropped).
+8. **Boolean columns encode as raw 0/1** (no [-1, 1] rescale) and decode by
+   thresholding the raw block — the original unscale-then-threshold path
+   only round-tripped exact values and mapped every continuous sample to
+   True.
