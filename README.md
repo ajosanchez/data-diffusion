@@ -56,11 +56,7 @@ structure carries over:
 
 ![Iris original clusters](./docs/iris-original.png)
 
-### Original vs. synthetic, same axes
-
-![Iris original vs. synthetic clusters](./docs/iris-comparison.png)
-
-### Synthetic alone (3,000 rows)
+### Synthetic alone (3,000 rows, same species and feature ranges as above)
 
 ![Iris synthetic clusters](./docs/iris-synthetic.png)
 

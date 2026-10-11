@@ -68,6 +68,7 @@ notebooks/
   iris-demo.ipynb    # executed demo: Iris clusters, original vs. synthetic;
                      # source of the README images in docs/
 docs/                # figures exported from the demo notebook, embedded in README
+                     # (original and synthetic shown separately, no shared axes)
 SPEC.md              # this file
 pyproject.toml
 ```
