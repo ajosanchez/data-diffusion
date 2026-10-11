@@ -52,7 +52,17 @@ Trained on the classic Iris dataset and sampled 20× as many rows
 ([notebook](notebooks/iris-demo.ipynb)) — the three-species cluster
 structure carries over:
 
-![Iris original vs. synthetic clusters](docs/iris-comparison.png)
+### Original (150 rows)
+
+![Iris original clusters](./docs/iris-original.png)
+
+### Original vs. synthetic, same axes
+
+![Iris original vs. synthetic clusters](./docs/iris-comparison.png)
+
+### Synthetic alone (3,000 rows)
+
+![Iris synthetic clusters](./docs/iris-synthetic.png)
 
 - **Setosa** stays fully separable; the **versicolor/virginica** overlap
   region is reproduced, including its shape and tilt.
